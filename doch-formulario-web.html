@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOCH — Formulario Desarrollo Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F4EFE6;
+    --black: #111111;
+    --gray: #888888;
+    --light-gray: #D8D3CA;
+    --border: #BBBBBB;
+    --white: #FFFFFF;
+    --section-bg: #EEEAE1;
+    --red: #C0392B;
+    --green: #2D6A4F;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--cream); color: var(--black); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+
+  /* ── GATE ── */
+  #gate {
+    position: fixed; inset: 0; background: var(--black);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; padding: 32px; animation: gateFadeIn 0.4s ease both;
+  }
+  @keyframes gateFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  #gate.exit { animation: gateExit 0.5s ease both; }
+  @keyframes gateExit { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.04); } }
+  .gate-logo { font-family: 'Bebas Neue', sans-serif; font-size: 64px; letter-spacing: 6px; color: var(--white); line-height: 1; margin-bottom: 6px; }
+  .gate-sub { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #555; margin-bottom: 56px; }
+  .gate-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-bottom: 12px; text-align: center; }
+  #gate-input {
+    background: #1a1a1a; border: 1px solid #333; color: var(--white);
+    font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 6px;
+    text-align: center; padding: 16px 32px; width: 260px; outline: none; transition: border-color 0.2s;
+  }
+  #gate-input:focus { border-color: #555; }
+  #gate-input.error { border-color: var(--red); animation: shake 0.35s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  #gate-error { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--red); margin-top: 12px; height: 16px; text-align: center; text-transform: uppercase; }
+  #gate-btn { margin-top: 24px; background: var(--white); color: var(--black); border: none; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; padding: 14px 40px; cursor: pointer; transition: background 0.2s; }
+  #gate-btn:hover { background: #ddd; }
+  .gate-footer { position: absolute; bottom: 28px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #333; text-transform: uppercase; }
+
+  /* ── APP ── */
+  #app { display: none; }
+  #app.visible { display: block; animation: appFadeIn 0.5s 0.1s ease both; }
+  @keyframes appFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── HEADER ── */
+  header { border-bottom: 2px solid var(--black); padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--cream); z-index: 100; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 3px; line-height: 1; }
+  .logo-sub { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gray); margin-top: 2px; }
+  .header-right { text-align: right; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); line-height: 1.8; }
+
+  /* ── PROGRESS ── */
+  .progress-wrap { border-bottom: 1px solid var(--border); padding: 14px 48px; display: flex; align-items: center; gap: 16px; background: var(--cream); position: sticky; top: 97px; z-index: 99; }
+  .progress-bar-outer { flex: 1; height: 3px; background: var(--light-gray); }
+  .progress-bar-inner { height: 3px; background: var(--black); width: 0%; transition: width 0.4s ease; }
+  .progress-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--gray); white-space: nowrap; }
+
+  /* ── HERO ── */
+  .hero { border-bottom: 1px solid var(--border); padding: 72px 48px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; }
+  .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.95; letter-spacing: 2px; }
+  .hero h1 span { display: block; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; font-weight: 400; color: var(--gray); margin-bottom: 12px; }
+  .hero-desc { font-size: 15px; color: #444; line-height: 1.75; max-width: 420px; font-weight: 300; }
+  .hero-desc strong { font-weight: 500; color: var(--black); }
+
+  /* ── MAIN ── */
+  main { max-width: 860px; margin: 0 auto; padding: 0 48px 120px; }
+  .form-section { border-top: 2px solid var(--black); padding: 56px 0 40px; display: none; }
+  .form-section.active { display: block; animation: fadeUp 0.35s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .section-header { display: flex; align-items: baseline; gap: 20px; margin-bottom: 40px; }
+  .section-number { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: var(--light-gray); line-height: 1; flex-shrink: 0; }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1.5px; line-height: 1; }
+  .section-desc { font-size: 13px; color: var(--gray); margin-top: 6px; font-weight: 300; }
+  .question { margin-bottom: 40px; }
+  .question-label { display: block; font-weight: 500; font-size: 14px; letter-spacing: 0.3px; margin-bottom: 6px; }
+  .question-hint { font-size: 12px; color: var(--gray); margin-bottom: 14px; font-style: italic; line-height: 1.5; border-left: 2px solid var(--light-gray); padding-left: 10px; }
+  .question-note { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gray); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; display: block; }
+
+  input[type="text"], input[type="email"], input[type="url"], textarea {
+    width: 100%; background: var(--white); border: 1px solid var(--border);
+    padding: 13px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--black); outline: none; transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, input[type="email"]:focus, input[type="url"]:focus, textarea:focus { border-color: var(--black); }
+  textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+
+  /* domain suggestions */
+  .domain-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+  .domain-row input { flex: 1; }
+  .domain-ext { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--gray); white-space: nowrap; }
+  .domain-add { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; background: none; border: 1px solid var(--border); padding: 9px 18px; cursor: pointer; color: var(--gray); transition: all 0.2s; margin-top: 4px; }
+  .domain-add:hover { border-color: var(--black); color: var(--black); }
+  .domain-remove { background: none; border: none; cursor: pointer; color: var(--light-gray); font-size: 16px; padding: 0 4px; transition: color 0.2s; }
+  .domain-remove:hover { color: var(--red); }
+
+  /* options */
+  .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .options-col { display: flex; flex-direction: column; gap: 8px; }
+  .opt-label { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border); background: var(--white); cursor: pointer; transition: border-color 0.15s, background 0.15s; font-size: 13.5px; user-select: none; }
+  .opt-label:hover { border-color: var(--black); }
+  .opt-label input[type="radio"], .opt-label input[type="checkbox"] { appearance: none; width: 14px; height: 14px; border: 1.5px solid var(--border); flex-shrink: 0; position: relative; cursor: pointer; transition: all 0.15s; }
+  .opt-label input[type="radio"]:checked, .opt-label input[type="checkbox"]:checked { background: var(--black); border-color: var(--black); }
+  .opt-label input[type="radio"]:checked::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 5px; height: 5px; background: white; border-radius: 50%; }
+  .opt-label input[type="checkbox"]:checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 9px; color: white; line-height: 1; }
+  .opt-label:has(input:checked) { border-color: var(--black); background: var(--section-bg); }
+  .other-input { margin-top: 8px; display: none; }
+  .other-input.visible { display: block; }
+
+  /* service table */
+  .service-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .service-table th { background: var(--black); color: var(--white); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 11px 14px; text-align: left; }
+  .service-table td { border: 1px solid var(--border); padding: 0; }
+  .service-table input, .service-table select { width: 100%; padding: 11px 14px; border: none; background: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--black); outline: none; }
+  .add-row-btn { margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; background: none; border: 1px solid var(--border); padding: 9px 18px; cursor: pointer; color: var(--gray); transition: all 0.2s; }
+  .add-row-btn:hover { border-color: var(--black); color: var(--black); }
+
+  /* upload */
+  .upload-zone { border: 1.5px dashed var(--border); background: var(--white); padding: 32px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; position: relative; }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--black); background: var(--section-bg); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--light-gray); line-height: 1; margin-bottom: 8px; }
+  .upload-text { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); }
+  .upload-text strong { color: var(--black); font-weight: 500; }
+  .upload-formats { font-size: 11px; color: var(--light-gray); margin-top: 6px; font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
+  .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 14px; }
+  .preview-item { position: relative; aspect-ratio: 1; border: 1px solid var(--border); overflow: hidden; background: var(--section-bg); }
+  .preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-item .file-name { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.65); color: white; font-family: 'DM Mono', monospace; font-size: 9px; padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preview-item .remove-btn { position: absolute; top: 4px; right: 4px; background: var(--black); color: white; border: none; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .preview-doc { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--border); background: var(--white); margin-top: 8px; font-size: 12px; }
+  .preview-doc .doc-icon { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gray); flex-shrink: 0; }
+  .preview-doc .doc-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--black); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preview-doc .remove-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--gray); padding: 0 4px; }
+  .preview-doc .remove-btn:hover { color: var(--black); }
+  .upload-count { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--gray); margin-top: 8px; text-transform: uppercase; }
+
+  /* nav */
+  .nav-buttons { display: flex; justify-content: space-between; align-items: center; padding-top: 40px; border-top: 1px solid var(--border); margin-top: 48px; }
+  .btn { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 14px 32px; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn-prev { background: none; border: 1px solid var(--border); color: var(--gray); }
+  .btn-prev:hover { border-color: var(--black); color: var(--black); }
+  .btn-next { background: var(--black); color: var(--white); }
+  .btn-next:hover { background: #333; }
+  .btn-submit { background: var(--black); color: var(--white); padding: 16px 48px; font-size: 12px; position: relative; }
+  .btn-submit:disabled { background: #999; cursor: not-allowed; }
+
+  /* sending overlay */
+  #sending-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(244,239,230,0.92);
+    z-index: 500; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+  }
+  #sending-overlay.active { display: flex; }
+  .sending-logo { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 4px; color: var(--black); }
+  .sending-msg { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); }
+  .sending-bar-outer { width: 200px; height: 2px; background: var(--light-gray); }
+  .sending-bar-inner { height: 2px; background: var(--black); width: 0%; transition: width 0.3s ease; }
+
+  /* success */
+  #success-screen { display: none; padding: 80px 48px; border-top: 2px solid var(--black); text-align: center; }
+  #success-screen .success-icon { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: var(--light-gray); margin-bottom: 24px; }
+  #success-screen h2 { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 2px; margin-bottom: 16px; }
+  #success-screen p { color: var(--gray); font-size: 14px; max-width: 440px; margin: 0 auto 40px; font-weight: 300; line-height: 1.75; }
+
+  footer { border-top: 1px solid var(--border); padding: 24px 48px; display: flex; justify-content: space-between; align-items: center; }
+  footer .footer-brand { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; }
+  footer .footer-info { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--gray); text-align: right; line-height: 1.8; }
+
+  @media (max-width: 700px) {
+    header, .progress-wrap, main, footer { padding-left: 24px; padding-right: 24px; }
+    .hero { grid-template-columns: 1fr; padding: 48px 24px 40px; }
+    .hero h1 { font-size: 52px; }
+    .progress-wrap { top: 80px; }
+    .options-grid { grid-template-columns: 1fr 1fr; }
+    .preview-grid { grid-template-columns: repeat(auto-fill, minmax(80px,1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<!-- GATE -->
+<div id="gate">
+  <div class="gate-logo">DOCH</div>
+  <div class="gate-sub">Operaciones Inteligentes — Chile</div>
+  <div class="gate-label">Ingresa tu código de acceso</div>
+  <input id="gate-input" type="password" maxlength="20" placeholder="· · · ·" />
+  <div id="gate-error"></div>
+  <button id="gate-btn">ACCEDER →</button>
+  <div class="gate-footer">doch.fun · Formulario protegido</div>
+</div>
+
+<!-- SENDING OVERLAY -->
+<div id="sending-overlay">
+  <div class="sending-logo">DOCH</div>
+  <div class="sending-bar-outer"><div class="sending-bar-inner" id="sending-bar"></div></div>
+  <div class="sending-msg" id="sending-msg">Enviando respuestas…</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div>
+      <div class="logo">DOCH</div>
+      <div class="logo-sub">Operaciones Inteligentes — Chile</div>
+    </div>
+    <div class="header-right">Formulario de Desarrollo Web<br>doch.fun</div>
+  </header>
+
+  <div class="progress-wrap">
+    <span class="progress-label" id="progress-text">SECCIÓN 1 / 10</span>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progress-bar"></div></div>
+  </div>
+
+  <div class="hero" id="hero-block">
+    <div>
+      <h1><span>Formulario de desarrollo</span>DESARROLLO<br>WEB &<br>BRANDING</h1>
+    </div>
+    <div class="hero-desc">
+      Gracias por confiar en nosotros.<br><br>
+      Este formulario nos ayudará a entender tu proyecto, tus objetivos y la experiencia que quieres entregar a tus clientes.<br><br>
+      <strong>Mientras más claras sean tus respuestas, mejor construimos tu herramienta de crecimiento.</strong>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ── S1 INFORMACIÓN GENERAL ── -->
+    <section class="form-section active" data-section="1">
+      <div class="section-header"><span class="section-number">01</span><div><div class="section-title">INFORMACIÓN GENERAL</div><div class="section-desc">Cuéntanos sobre tu negocio antes de empezar.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">1. Nombre de tu negocio o marca *</label>
+        <input type="text" id="q-nombre" placeholder="Ej: Estudio Luna, Terapias Alma, etc." />
+      </div>
+      <div class="question">
+        <label class="question-label">2. ¿Tu negocio ya está funcionando?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="negocio_activo" value="Sí, ya está en marcha" /> Sí, ya está en marcha</label>
+          <label class="opt-label"><input type="radio" name="negocio_activo" value="No, recién comenzaré" /> No, recién comenzaré</label>
+        </div>
+      </div>
+      <div class="question">
+        <label class="question-label">3. ¿Cuál es el objetivo principal de tu página web?</label>
+        <span class="question-note">Elige máximo 2 opciones</span>
+        <div class="options-grid">
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Conseguir clientes" /> Conseguir clientes</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Mostrar servicios" /> Mostrar mis servicios</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Vender productos" /> Vender productos</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Recibir reservas" /> Recibir reservas</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Generar confianza" /> Generar confianza</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Mostrar trabajo" /> Mostrar mi trabajo</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Crear comunidad" /> Crear comunidad</label>
+          <label class="opt-label"><input type="checkbox" name="objetivo" value="Otro" onchange="toggleOther('other-objetivo',this)" /> Otro</label>
+        </div>
+        <input type="text" class="other-input" id="other-objetivo" placeholder="Especifica el objetivo…" />
+      </div>
+      <div class="question">
+        <label class="question-label">4. ¿Cuál es HOY tu principal fuente de ingresos?</label>
+        <span class="question-note">Solo 1 — Definirá el foco principal de la web</span>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="fuente_ingreso" value="Servicios" /> Servicios</label>
+          <label class="opt-label"><input type="radio" name="fuente_ingreso" value="Talleres / Clases" /> Talleres / Clases</label>
+          <label class="opt-label"><input type="radio" name="fuente_ingreso" value="Productos" /> Productos</label>
+          <label class="opt-label"><input type="radio" name="fuente_ingreso" value="Membresías" /> Membresías</label>
+          <label class="opt-label"><input type="radio" name="fuente_ingreso" value="Eventos" /> Eventos</label>
+          <label class="opt-label"><input type="radio" name="fuente_ingreso" value="Otro" onchange="toggleOther('other-fuente',this)" /> Otro</label>
+        </div>
+        <input type="text" class="other-input" id="other-fuente" placeholder="Especifica…" />
+      </div>
+      <div class="nav-buttons"><span></span><button class="btn btn-next" onclick="goTo(2)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S2 CLIENTE IDEAL ── -->
+    <section class="form-section" data-section="2">
+      <div class="section-header"><span class="section-number">02</span><div><div class="section-title">TU CLIENTE IDEAL</div><div class="section-desc">Mientras más específico seas, más efectivo será el diseño.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">5. ¿Quién es la persona que más necesita tus servicios? *</label>
+        <div class="question-hint">Ej: "Mujeres de 30 a 50 años con ansiedad y estrés laboral que buscan herramientas para manejar sus emociones."</div>
+        <textarea id="q-cliente" placeholder="Descríbela con la mayor precisión posible…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">6. ¿Qué problema principal tiene esa persona?</label>
+        <div class="question-hint">Evita responder "de todo". Enfócate en el dolor más frecuente.</div>
+        <textarea id="q-problema" placeholder="El problema más importante que tú resuelves…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">7. ¿Cómo se siente antes de llegar a ti?</label>
+        <span class="question-note">Puedes elegir varias</span>
+        <div class="options-grid">
+          <label class="opt-label"><input type="checkbox" name="estado_prev" value="Ansiedad" /> Ansiedad</label>
+          <label class="opt-label"><input type="checkbox" name="estado_prev" value="Estrés" /> Estrés</label>
+          <label class="opt-label"><input type="checkbox" name="estado_prev" value="Desmotivación" /> Desmotivación</label>
+          <label class="opt-label"><input type="checkbox" name="estado_prev" value="Falta de claridad" /> Falta de claridad</label>
+          <label class="opt-label"><input type="checkbox" name="estado_prev" value="Agotamiento" /> Agotamiento</label>
+          <label class="opt-label"><input type="checkbox" name="estado_prev" value="Otro" onchange="toggleOther('other-estado',this)" /> Otro</label>
+        </div>
+        <input type="text" class="other-input" id="other-estado" placeholder="Especifica…" />
+      </div>
+      <div class="question">
+        <label class="question-label">8. ¿Qué cambio obtiene después de trabajar contigo?</label>
+        <textarea id="q-cambio" placeholder="Describe la transformación que vive tu cliente…"></textarea>
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(1)">← VOLVER</button><button class="btn btn-next" onclick="goTo(3)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S3 SERVICIOS ── -->
+    <section class="form-section" data-section="3">
+      <div class="section-header"><span class="section-number">03</span><div><div class="section-title">TUS SERVICIOS</div><div class="section-desc">Esta sección define la arquitectura de tu web.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">9. ¿Qué servicio quieres destacar MÁS en la página?</label>
+        <span class="question-note">Solo 1 — Definirá el foco principal del sitio</span>
+        <input type="text" id="q-servicio-estrella" placeholder="Ej: Consultoría 1 a 1, Taller grupal, Pack mensual…" />
+      </div>
+      <div class="question">
+        <label class="question-label">10. Lista todos tus servicios</label>
+        <span class="question-note">Agrega tantas filas como necesites</span>
+        <table class="service-table">
+          <thead><tr><th>Servicio</th><th>Descripción breve</th><th>Modalidad</th></tr></thead>
+          <tbody id="service-rows">
+            <tr><td><input type="text" placeholder="Nombre del servicio" /></td><td><input type="text" placeholder="Qué incluye…" /></td><td><select><option value="">Elige…</option><option>Presencial</option><option>Online</option><option>Ambas</option></select></td></tr>
+            <tr><td><input type="text" placeholder="Nombre del servicio" /></td><td><input type="text" placeholder="Qué incluye…" /></td><td><select><option value="">Elige…</option><option>Presencial</option><option>Online</option><option>Ambas</option></select></td></tr>
+          </tbody>
+        </table>
+        <button class="add-row-btn" onclick="addServiceRow()">+ AGREGAR SERVICIO</button>
+      </div>
+      <div class="question">
+        <label class="question-label">11. ¿Qué servicios generan más ingresos hoy?</label>
+        <div class="question-hint">Ordénalos del 1 al 3, siendo 1 el de mayor ingreso.</div>
+        <textarea id="q-ingresos" placeholder="1. …&#10;2. …&#10;3. …"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">12. ¿Qué servicio es más fácil de vender?</label>
+        <input type="text" id="q-facil" placeholder="El que la gente acepta más rápido…" />
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(2)">← VOLVER</button><button class="btn btn-next" onclick="goTo(4)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S4 CONVERSIÓN ── -->
+    <section class="form-section" data-section="4">
+      <div class="section-header"><span class="section-number">04</span><div><div class="section-title">CONVERSIÓN Y CONTACTO</div><div class="section-desc">Define cómo la web convertirá visitas en clientes.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">13. ¿Cómo quieres que las personas te contacten principalmente?</label>
+        <span class="question-note">Solo 1 — Todo el diseño se construirá en torno a esta respuesta</span>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="contacto" value="WhatsApp" /> WhatsApp</label>
+          <label class="opt-label"><input type="radio" name="contacto" value="Formulario de contacto" /> Formulario de contacto</label>
+          <label class="opt-label"><input type="radio" name="contacto" value="Agenda online" /> Agenda online</label>
+          <label class="opt-label"><input type="radio" name="contacto" value="Instagram / Redes" /> Instagram / Redes sociales</label>
+          <label class="opt-label"><input type="radio" name="contacto" value="Email" /> Email</label>
+        </div>
+      </div>
+      <div class="question">
+        <label class="question-label">14. ¿Qué quieres que haga una persona apenas entre a tu web?</label>
+        <div class="question-hint">Ej: "Que me escriba por WhatsApp", "Que agende una sesión gratis".</div>
+        <textarea id="q-cta" placeholder="La acción más importante que quiero que tome el visitante…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">15. ¿Necesitas agenda online?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="agenda" value="Sí" /> Sí</label>
+          <label class="opt-label"><input type="radio" name="agenda" value="No" /> No</label>
+          <label class="opt-label"><input type="radio" name="agenda" value="Más adelante" /> Más adelante</label>
+        </div>
+      </div>
+      <div class="question">
+        <label class="question-label">16. ¿Necesitas pagos online?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="pagos" value="Sí" /> Sí</label>
+          <label class="opt-label"><input type="radio" name="pagos" value="No" /> No</label>
+          <label class="opt-label"><input type="radio" name="pagos" value="Más adelante" /> Más adelante</label>
+        </div>
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(3)">← VOLVER</button><button class="btn btn-next" onclick="goTo(5)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S5 HISTORIA ── -->
+    <section class="form-section" data-section="5">
+      <div class="section-header"><span class="section-number">05</span><div><div class="section-title">TU HISTORIA Y DIFERENCIACIÓN</div><div class="section-desc">Aquí está la personalidad de tu marca. Sé honesto.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">17. ¿Por qué comenzaste este proyecto?</label>
+        <div class="question-hint">No necesitas escribir perfecto. Solo queremos entender tu historia y propósito real.</div>
+        <textarea id="q-historia" style="min-height:130px" placeholder="Cuéntanos qué te llevó a crear esto…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">18. ¿Qué te diferencia de otras personas o marcas similares?</label>
+        <div class="question-hint">Evita respuestas como "porque ayudo con amor". Busca algo concreto y único.</div>
+        <textarea id="q-diferenciacion" placeholder="Lo que yo hago distinto es…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">19. ¿Cómo quieres que las personas se sientan al entrar a tu página?</label>
+        <span class="question-note">Elige máximo 3</span>
+        <div class="options-grid">
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Paz" /> Paz</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Confianza" /> Confianza</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Profesionalismo" /> Profesionalismo</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Cercanía" /> Cercanía</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Elegancia" /> Elegancia</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Inspiración" /> Inspiración</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Energía" /> Energía</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Seguridad" /> Seguridad</label>
+          <label class="opt-label"><input type="checkbox" name="feeling" value="Otro" onchange="toggleOther('other-feeling',this)" /> Otro</label>
+        </div>
+        <input type="text" class="other-input" id="other-feeling" placeholder="Especifica…" />
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(4)">← VOLVER</button><button class="btn btn-next" onclick="goTo(6)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S6 VISUAL + ARCHIVOS ── -->
+    <section class="form-section" data-section="6">
+      <div class="section-header"><span class="section-number">06</span><div><div class="section-title">ESTILO VISUAL Y MATERIAL</div><div class="section-desc">Paleta, referentes y archivos de tu identidad digital.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">20. ¿Qué colores te representan?</label>
+        <div class="question-hint">Puedes nombrarlos, dar códigos HEX o describirlos (ej: "tonos tierra, verde oscuro, blanco").</div>
+        <input type="text" id="q-colores" placeholder="Ej: #2D6A4F, verde bosque, beige cálido…" />
+      </div>
+      <div class="question">
+        <label class="question-label">21. ¿Qué NO quieres ver en tu página web?</label>
+        <div class="question-hint">Ej: colores fuertes, estilo recargado, tipografías demasiado decorativas.</div>
+        <textarea id="q-no-quiero" placeholder="Elementos que definitivamente no quiero…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">22. ¿Qué páginas, marcas o cuentas te gustan visualmente?</label>
+        <div class="question-hint">Pega links o nombra marcas. Sirven como referencia de estilo, no como copia.</div>
+        <textarea id="q-referencias" placeholder="Links o nombres de referencia visual…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">23. Sube tu logo</label>
+        <div class="question-hint">PNG, SVG, PDF o AI. Si tienes varias versiones, súbelas todas.</div>
+        <div class="upload-zone" id="zone-logo" ondragover="handleDrag(event,'zone-logo')" ondragleave="handleDragLeave('zone-logo')" ondrop="handleDrop(event,'logo-files','preview-logo')">
+          <input type="file" id="logo-files" multiple accept="image/*,.pdf,.ai,.svg" onchange="handleFiles(this,'preview-logo')" />
+          <div class="upload-icon">↑</div>
+          <div class="upload-text"><strong>Arrastra tu logo aquí</strong> o haz clic para buscar</div>
+          <div class="upload-formats">PNG · SVG · PDF · AI</div>
+        </div>
+        <div class="preview-grid" id="preview-logo"></div>
+        <div class="upload-count" id="count-logo"></div>
+      </div>
+      <div class="question">
+        <label class="question-label">24. Sube tus fotografías</label>
+        <div class="question-hint">Fotos tuyas, de tu espacio o de tu trabajo. Mientras más, mejor.</div>
+        <div class="upload-zone" id="zone-fotos" ondragover="handleDrag(event,'zone-fotos')" ondragleave="handleDragLeave('zone-fotos')" ondrop="handleDrop(event,'foto-files','preview-fotos')">
+          <input type="file" id="foto-files" multiple accept="image/*" onchange="handleFiles(this,'preview-fotos')" />
+          <div class="upload-icon">↑</div>
+          <div class="upload-text"><strong>Arrastra tus fotos aquí</strong> o haz clic para buscar</div>
+          <div class="upload-formats">JPG · PNG · WEBP · HEIC</div>
+        </div>
+        <div class="preview-grid" id="preview-fotos"></div>
+        <div class="upload-count" id="count-fotos"></div>
+      </div>
+      <div class="question">
+        <label class="question-label">25. Sube imágenes de referencia visual</label>
+        <div class="question-hint">Capturas de webs que te gustan, paletas de colores, estilos de diseño.</div>
+        <div class="upload-zone" id="zone-refs" ondragover="handleDrag(event,'zone-refs')" ondragleave="handleDragLeave('zone-refs')" ondrop="handleDrop(event,'ref-files','preview-refs')">
+          <input type="file" id="ref-files" multiple accept="image/*" onchange="handleFiles(this,'preview-refs')" />
+          <div class="upload-icon">↑</div>
+          <div class="upload-text"><strong>Arrastra referencias visuales</strong> o haz clic para buscar</div>
+          <div class="upload-formats">JPG · PNG · WEBP</div>
+        </div>
+        <div class="preview-grid" id="preview-refs"></div>
+        <div class="upload-count" id="count-refs"></div>
+      </div>
+      <div class="question">
+        <label class="question-label">26. ¿Tienes videos para incluir en la web?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="videos" value="Sí" /> Sí, tengo videos listos</label>
+          <label class="opt-label"><input type="radio" name="videos" value="No" /> No por ahora</label>
+        </div>
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(5)">← VOLVER</button><button class="btn btn-next" onclick="goTo(7)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S7 REDES ── -->
+    <section class="form-section" data-section="7">
+      <div class="section-header"><span class="section-number">07</span><div><div class="section-title">REDES Y CONTENIDO</div><div class="section-desc">Para integrar tus canales digitales correctamente.</div></div></div>
+
+      <div class="question"><label class="question-label">27. Instagram</label><input type="text" id="q-instagram" placeholder="@tuusuario" /></div>
+      <div class="question"><label class="question-label">28. Facebook</label><input type="text" id="q-facebook" placeholder="facebook.com/tupagina" /></div>
+      <div class="question"><label class="question-label">29. TikTok</label><input type="text" id="q-tiktok" placeholder="@tuusuario" /></div>
+      <div class="question"><label class="question-label">30. YouTube</label><input type="text" id="q-youtube" placeholder="youtube.com/tucanal" /></div>
+      <div class="question">
+        <label class="question-label">31. ¿Quieres integrar tus redes sociales en la web?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="redes_integrar" value="Sí" /> Sí</label>
+          <label class="opt-label"><input type="radio" name="redes_integrar" value="No" /> No</label>
+        </div>
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(6)">← VOLVER</button><button class="btn btn-next" onclick="goTo(8)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S8 CONFIANZA ── -->
+    <section class="form-section" data-section="8">
+      <div class="section-header"><span class="section-number">08</span><div><div class="section-title">CONFIANZA Y VALIDACIÓN</div><div class="section-desc">Los elementos que generan credibilidad ante tus clientes.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">32. ¿Tienes testimonios de clientes?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="testimonios" value="Sí, varios" /> Sí, tengo varios</label>
+          <label class="opt-label"><input type="radio" name="testimonios" value="Algunos, pocos" /> Algunos, pocos</label>
+          <label class="opt-label"><input type="radio" name="testimonios" value="No aún" /> No tengo aún</label>
+        </div>
+      </div>
+      <div class="question">
+        <label class="question-label">33. Escribe algunos testimonios o comentarios de clientes</label>
+        <div class="question-hint">Si tienes texto, pégalo aquí. Son muy valiosos para la web.</div>
+        <textarea id="q-testimonios" style="min-height:120px" placeholder="'Gracias a [nombre] pude…' o 'El trabajo fue…'"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">34. ¿Tienes certificaciones, estudios o experiencia relevante?</label>
+        <textarea id="q-certificaciones" placeholder="Ej: Certificada en Mindfulness por X, 8 años trabajando en Y…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">35. ¿Quieres mostrar tu equipo en la web?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="equipo" value="Sí" /> Sí</label>
+          <label class="opt-label"><input type="radio" name="equipo" value="No" /> No, trabajo solo/a</label>
+        </div>
+      </div>
+      <div class="question">
+        <label class="question-label">36. Si tienes equipo, escribe nombres y especialidades</label>
+        <textarea id="q-equipo" placeholder="Nombre — Rol / Especialidad&#10;Nombre — Rol / Especialidad"></textarea>
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(7)">← VOLVER</button><button class="btn btn-next" onclick="goTo(9)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S9 DOMINIO + TÉCNICA ── -->
+    <section class="form-section" data-section="9">
+      <div class="section-header"><span class="section-number">09</span><div><div class="section-title">DOMINIO Y TÉCNICA</div><div class="section-desc">Para saber desde dónde partimos y definir tu dirección web.</div></div></div>
+
+      <!-- DOMINIO ACTUAL -->
+      <div class="question">
+        <label class="question-label">37. ¿Ya tienes un dominio registrado?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="tiene_dominio" value="Sí" onclick="toggleSection('dominio-actual-block', true); toggleSection('dominio-opciones-block', false)" /> Sí, ya tengo dominio</label>
+          <label class="opt-label"><input type="radio" name="tiene_dominio" value="No" onclick="toggleSection('dominio-actual-block', false); toggleSection('dominio-opciones-block', true)" /> No, necesito elegir uno</label>
+        </div>
+      </div>
+
+      <!-- Si tiene dominio -->
+      <div id="dominio-actual-block" style="display:none; margin-bottom:40px;">
+        <label class="question-label">37a. ¿Cuál es tu dominio actual?</label>
+        <div class="question-hint">Escríbelo exactamente como aparece. Ej: tunegocio.cl</div>
+        <input type="text" id="q-dominio-actual" placeholder="tunegocio.cl" />
+      </div>
+
+      <!-- Si NO tiene dominio → opciones ideales -->
+      <div id="dominio-opciones-block" style="display:none; margin-bottom:40px;">
+        <label class="question-label">37b. ¿Cuáles serían tus opciones de dominio ideales?</label>
+        <div class="question-hint">Escribe hasta 5 nombres que te gustarían, en orden de preferencia. Te ayudaremos a verificar disponibilidad. Puedes incluir extensión (.cl, .com, .online, etc.) o dejar que te recomendemos.</div>
+        <div id="domain-options-list">
+          <div class="domain-row">
+            <span class="domain-ext" style="color:var(--gray);font-family:'DM Mono',monospace;font-size:12px;min-width:20px">1.</span>
+            <input type="text" placeholder="Ej: miestudiocreativo.cl" />
+            <span class="domain-ext">.cl · .com · libre</span>
+          </div>
+          <div class="domain-row">
+            <span class="domain-ext" style="color:var(--gray);font-family:'DM Mono',monospace;font-size:12px;min-width:20px">2.</span>
+            <input type="text" placeholder="Segunda opción…" />
+            <span class="domain-ext">.cl · .com · libre</span>
+          </div>
+          <div class="domain-row">
+            <span class="domain-ext" style="color:var(--gray);font-family:'DM Mono',monospace;font-size:12px;min-width:20px">3.</span>
+            <input type="text" placeholder="Tercera opción…" />
+            <span class="domain-ext">.cl · .com · libre</span>
+          </div>
+        </div>
+        <button class="domain-add" onclick="addDomainRow()">+ AGREGAR OPCIÓN</button>
+
+        <div style="margin-top:28px;">
+          <label class="question-label">¿Tienes preferencia por alguna extensión?</label>
+          <span class="question-note">Puedes elegir varias</span>
+          <div class="options-grid">
+            <label class="opt-label"><input type="checkbox" name="ext_dominio" value=".cl" /> .cl (Chile)</label>
+            <label class="opt-label"><input type="checkbox" name="ext_dominio" value=".com" /> .com (internacional)</label>
+            <label class="opt-label"><input type="checkbox" name="ext_dominio" value=".online" /> .online</label>
+            <label class="opt-label"><input type="checkbox" name="ext_dominio" value=".co" /> .co</label>
+            <label class="opt-label"><input type="checkbox" name="ext_dominio" value=".store" /> .store</label>
+            <label class="opt-label"><input type="checkbox" name="ext_dominio" value="Sin preferencia" /> Sin preferencia, me orientan</label>
+          </div>
+        </div>
+
+        <div style="margin-top:28px;">
+          <label class="question-label">¿Hay palabras clave que deberían estar en el dominio?</label>
+          <div class="question-hint">Ej: tu nombre, el tipo de servicio, tu ciudad. Nos ayuda a sugerirte mejores opciones.</div>
+          <input type="text" id="q-palabras-dominio" placeholder="Ej: terapia, nombre propio, bienestar, chile…" />
+        </div>
+      </div>
+
+      <div class="question">
+        <label class="question-label">38. ¿Ya tienes hosting?</label>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="hosting" value="Sí" /> Sí</label>
+          <label class="opt-label"><input type="radio" name="hosting" value="No" /> No</label>
+        </div>
+        <input type="text" id="q-hosting" style="margin-top:10px" placeholder="Si tienes, ¿qué proveedor? Ej: Hostinger, SiteGround…" />
+      </div>
+      <div class="question">
+        <label class="question-label">39. ¿Ya tienes correo corporativo?</label>
+        <div class="question-hint">Ej: hola@tunegocio.com</div>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="correo" value="Sí" /> Sí</label>
+          <label class="opt-label"><input type="radio" name="correo" value="No" /> No</label>
+        </div>
+      </div>
+      <div class="question">
+        <label class="question-label">40. ¿Necesitas que la página sea autoadministrable?</label>
+        <div class="question-hint">¿Quieres poder editar el contenido tú mismo después de la entrega?</div>
+        <div class="options-col">
+          <label class="opt-label"><input type="radio" name="admin" value="Sí" /> Sí, quiero poder editarla</label>
+          <label class="opt-label"><input type="radio" name="admin" value="No" /> No, prefiero que lo gestionen ustedes</label>
+        </div>
+      </div>
+      <div class="nav-buttons"><button class="btn btn-prev" onclick="goTo(8)">← VOLVER</button><button class="btn btn-next" onclick="goTo(10)">CONTINUAR →</button></div>
+    </section>
+
+    <!-- ── S10 FUTURO ── -->
+    <section class="form-section" data-section="10">
+      <div class="section-header"><span class="section-number">10</span><div><div class="section-title">FUTURO DEL NEGOCIO</div><div class="section-desc">Pensamos a largo plazo para construir una web que escale contigo.</div></div></div>
+
+      <div class="question">
+        <label class="question-label">41. ¿Qué te gustaría lograr con tu negocio en los próximos 12 meses?</label>
+        <textarea id="q-futuro" style="min-height:120px" placeholder="Más clientes, lanzar un curso, abrir otra sede, automatizar procesos…"></textarea>
+      </div>
+      <div class="question">
+        <label class="question-label">42. ¿Qué te gustaría agregar más adelante a tu página?</label>
+        <span class="question-note">Puedes elegir varias</span>
+        <div class="options-grid">
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Cursos online" /> Cursos online</label>
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Pagos online" /> Pagos online</label>
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Comunidad privada" /> Comunidad privada</label>
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Tienda" /> Tienda</label>
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Membresías" /> Membresías</label>
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Blog" /> Blog</label>
+          <label class="opt-label"><input type="checkbox" name="futuro_func" value="Otro" onchange="toggleOther('other-futuro',this)" /> Otro</label>
+        </div>
+        <input type="text" class="other-input" id="other-futuro" placeholder="Especifica…" />
+      </div>
+      <div class="question">
+        <label class="question-label">43. ¿Hay algo más que quieras contarnos sobre tu proyecto?</label>
+        <textarea id="q-extra" style="min-height:100px" placeholder="Cualquier detalle adicional que creas importante…"></textarea>
+      </div>
+      <div class="nav-buttons">
+        <button class="btn btn-prev" onclick="goTo(9)">← VOLVER</button>
+        <button class="btn btn-submit" id="submit-btn" onclick="submitForm()">ENVIAR FORMULARIO →</button>
+      </div>
+    </section>
+
+    <!-- SUCCESS -->
+    <div id="success-screen">
+      <div class="success-icon">✓</div>
+      <h2>¡CARGA EXITOSA!</h2>
+      <p>Tus respuestas y archivos fueron recibidos correctamente.<br><br>Gracias por confiar en DOCH. Pronto nos contactaremos contigo.</p>
+      <a href="https://doch.fun" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;border-bottom:1px solid var(--black);padding-bottom:3px;">VOLVER A DOCH.FUN</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-brand">DOCH</div>
+    <div class="footer-info">Juan B. Alemán / Fausto Alemán<br>fondocultural.ar@gmail.com · +569 9144 2354<br>doch.fun</div>
+  </footer>
+</div>
+
+<script>
+/* ════ CONFIG — pegar tu URL de Apps Script aquí ════ */
+const APPS_SCRIPT_URL = 'TU_URL_AQUI'; // Reemplazar con la URL del Apps Script desplegado
+
+/* ════ GATE ════ */
+const ACCESS_CODE = 'doch';
+document.getElementById('gate-btn').addEventListener('click', checkGate);
+document.getElementById('gate-input').addEventListener('keydown', e => { if(e.key==='Enter') checkGate(); });
+
+function checkGate() {
+  const val = document.getElementById('gate-input').value.trim().toLowerCase();
+  if (val === ACCESS_CODE) {
+    const gate = document.getElementById('gate');
+    gate.classList.add('exit');
+    setTimeout(() => { gate.style.display='none'; document.getElementById('app').classList.add('visible'); }, 480);
+  } else {
+    const inp = document.getElementById('gate-input');
+    inp.classList.add('error');
+    document.getElementById('gate-error').textContent = 'Código incorrecto. Inténtalo nuevamente.';
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error'), 400);
+  }
+}
+
+/* ════ NAVIGATION ════ */
+const TOTAL = 10; let current = 1;
+function goTo(n) {
+  document.querySelector(`[data-section="${current}"]`).classList.remove('active');
+  document.querySelector(`[data-section="${n}"]`).classList.add('active');
+  current = n; updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('hero-block').style.display = n===1 ? '' : 'none';
+}
+function updateProgress() {
+  const pct = ((current-1)/(TOTAL-1))*100;
+  document.getElementById('progress-bar').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = `SECCIÓN ${current} / ${TOTAL}`;
+}
+function toggleOther(id, cb) { const el=document.getElementById(id); if(el) el.classList.toggle('visible', cb.checked); }
+function toggleSection(id, show) { const el=document.getElementById(id); if(el) el.style.display = show ? 'block' : 'none'; }
+function addServiceRow() {
+  const tbody = document.getElementById('service-rows');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" placeholder="Nombre del servicio" /></td><td><input type="text" placeholder="Qué incluye…" /></td><td><select><option value="">Elige…</option><option>Presencial</option><option>Online</option><option>Ambas</option></select></td>`;
+  tbody.appendChild(tr);
+}
+function addDomainRow() {
+  const list = document.getElementById('domain-options-list');
+  const n = list.children.length + 1;
+  if (n > 5) return;
+  const div = document.createElement('div');
+  div.className = 'domain-row';
+  div.innerHTML = `<span class="domain-ext" style="color:var(--gray);font-family:'DM Mono',monospace;font-size:12px;min-width:20px">${n}.</span><input type="text" placeholder="Otra opción…" /><span class="domain-ext">.cl · .com · libre</span><button class="domain-remove" onclick="this.parentElement.remove()" title="Eliminar">×</button>`;
+  list.appendChild(div);
+}
+
+/* ════ FILE UPLOAD ════ */
+const uploadedFiles = { 'preview-logo':[], 'preview-fotos':[], 'preview-refs':[] };
+function handleDrag(e, zoneId) { e.preventDefault(); document.getElementById(zoneId).classList.add('dragover'); }
+function handleDragLeave(zoneId) { document.getElementById(zoneId).classList.remove('dragover'); }
+function handleDrop(e, inputId, previewId) { e.preventDefault(); document.getElementById(e.currentTarget.id).classList.remove('dragover'); addFilesToPreview(Array.from(e.dataTransfer.files), previewId); }
+function handleFiles(input, previewId) { addFilesToPreview(Array.from(input.files), previewId); }
+function addFilesToPreview(files, previewId) {
+  const grid = document.getElementById(previewId);
+  files.forEach(file => {
+    uploadedFiles[previewId].push(file);
+    const id = 'f-'+Date.now()+Math.random().toString(36).slice(2);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const div = document.createElement('div'); div.className='preview-item'; div.id=id;
+        div.innerHTML = `<img src="${ev.target.result}" alt="${file.name}" /><div class="file-name">${file.name}</div><button class="remove-btn" onclick="removeFile('${id}','${previewId}')">✕</button>`;
+        grid.appendChild(div); updateCount(previewId);
+      }; reader.readAsDataURL(file);
+    } else {
+      const div = document.createElement('div'); div.className='preview-doc'; div.id=id;
+      div.innerHTML = `<span class="doc-icon">DOC</span><span class="doc-name">${file.name}</span><button class="remove-btn" onclick="removeFile('${id}','${previewId}')">✕</button>`;
+      grid.appendChild(div); updateCount(previewId);
+    }
+  });
+}
+function removeFile(itemId, previewId) { const el=document.getElementById(itemId); if(el) el.remove(); updateCount(previewId); }
+function updateCount(previewId) {
+  const count = document.getElementById(previewId).children.length;
+  const key = previewId.replace('preview-','');
+  const el = document.getElementById('count-'+key);
+  if(el) el.textContent = count > 0 ? `${count} archivo${count!==1?'s':''} cargado${count!==1?'s':''}` : '';
+}
+
+/* ════ CHECKBOX LIMITS ════ */
+document.querySelectorAll('[name="objetivo"]').forEach(cb => cb.addEventListener('change', () => { const c=document.querySelectorAll('[name="objetivo"]:checked'); if(c.length>2) cb.checked=false; }));
+document.querySelectorAll('[name="feeling"]').forEach(cb => cb.addEventListener('change', () => { const c=document.querySelectorAll('[name="feeling"]:checked'); if(c.length>3) cb.checked=false; }));
+
+/* ════ COLLECT DATA ════ */
+function getVal(id) { const el=document.getElementById(id); return el ? el.value.trim() : ''; }
+function getRadio(name) { const el=document.querySelector(`[name="${name}"]:checked`); return el ? el.value : ''; }
+function getChecks(name) { return Array.from(document.querySelectorAll(`[name="${name}"]:checked`)).map(e=>e.value).join(', '); }
+function getServices() {
+  return Array.from(document.querySelectorAll('#service-rows tr')).map(tr => {
+    const cells = tr.querySelectorAll('input, select');
+    return [cells[0]?.value||'', cells[1]?.value||'', cells[2]?.value||''].join(' | ');
+  }).filter(r=>r.replace(/\|/g,'').trim()).join('\n');
+}
+function getDomainOptions() {
+  return Array.from(document.querySelectorAll('#domain-options-list input')).map(i=>i.value.trim()).filter(Boolean).join(', ');
+}
+
+function collectFormData() {
+  return {
+    timestamp: new Date().toLocaleString('es-CL'),
+    nombre_marca: getVal('q-nombre'),
+    negocio_activo: getRadio('negocio_activo'),
+    objetivo_web: getChecks('objetivo') + (getVal('other-objetivo') ? ' / ' + getVal('other-objetivo') : ''),
+    fuente_ingreso: getRadio('fuente_ingreso') + (getVal('other-fuente') ? ' / ' + getVal('other-fuente') : ''),
+    cliente_ideal: getVal('q-cliente'),
+    problema_cliente: getVal('q-problema'),
+    estado_previo: getChecks('estado_prev') + (getVal('other-estado') ? ' / ' + getVal('other-estado') : ''),
+    cambio_cliente: getVal('q-cambio'),
+    servicio_estrella: getVal('q-servicio-estrella'),
+    lista_servicios: getServices(),
+    servicios_mas_ingresos: getVal('q-ingresos'),
+    servicio_mas_facil: getVal('q-facil'),
+    canal_contacto: getRadio('contacto'),
+    accion_principal_web: getVal('q-cta'),
+    agenda_online: getRadio('agenda'),
+    pagos_online: getRadio('pagos'),
+    historia: getVal('q-historia'),
+    diferenciacion: getVal('q-diferenciacion'),
+    sensaciones_web: getChecks('feeling') + (getVal('other-feeling') ? ' / ' + getVal('other-feeling') : ''),
+    colores: getVal('q-colores'),
+    no_quiero: getVal('q-no-quiero'),
+    referencias_visuales: getVal('q-referencias'),
+    tiene_dominio: getRadio('tiene_dominio'),
+    dominio_actual: getVal('q-dominio-actual'),
+    opciones_dominio: getDomainOptions(),
+    extension_preferida: getChecks('ext_dominio'),
+    palabras_clave_dominio: getVal('q-palabras-dominio'),
+    tiene_hosting: getRadio('hosting'),
+    proveedor_hosting: getVal('q-hosting'),
+    tiene_correo: getRadio('correo'),
+    autoadministrable: getRadio('admin'),
+    instagram: getVal('q-instagram'),
+    facebook: getVal('q-facebook'),
+    tiktok: getVal('q-tiktok'),
+    youtube: getVal('q-youtube'),
+    integrar_redes: getRadio('redes_integrar'),
+    tiene_testimonios: getRadio('testimonios'),
+    testimonios: getVal('q-testimonios'),
+    certificaciones: getVal('q-certificaciones'),
+    mostrar_equipo: getRadio('equipo'),
+    equipo: getVal('q-equipo'),
+    videos: getRadio('videos'),
+    metas_12_meses: getVal('q-futuro'),
+    funciones_futuras: getChecks('futuro_func') + (getVal('other-futuro') ? ' / ' + getVal('other-futuro') : ''),
+    notas_extra: getVal('q-extra'),
+    archivos_logo: uploadedFiles['preview-logo'].length,
+    archivos_fotos: uploadedFiles['preview-fotos'].length,
+    archivos_referencias: uploadedFiles['preview-refs'].length
+  };
+}
+
+/* ════ SUBMIT ════ */
+async function submitForm() {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+
+  const overlay = document.getElementById('sending-overlay');
+  const bar = document.getElementById('sending-bar');
+  const msg = document.getElementById('sending-msg');
+  overlay.classList.add('active');
+
+  // Simulate progress steps
+  const steps = [
+    [10, 'Preparando datos…'],
+    [30, 'Enviando respuestas…'],
+    [55, 'Subiendo archivos…'],
+    [80, 'Guardando en Drive…'],
+    [95, 'Casi listo…']
+  ];
+  for (const [pct, text] of steps) {
+    bar.style.width = pct + '%'; msg.textContent = text;
+    await new Promise(r => setTimeout(r, 600));
+  }
+
+  try {
+    if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'TU_URL_AQUI') {
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(collectFormData()));
+      uploadedFiles['preview-logo'].forEach((f,i) => formData.append(`logo_${i}`, f));
+      uploadedFiles['preview-fotos'].forEach((f,i) => formData.append(`foto_${i}`, f));
+      uploadedFiles['preview-refs'].forEach((f,i) => formData.append(`ref_${i}`, f));
+      await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    }
+  } catch(e) { console.warn('Submit error:', e); }
+
+  bar.style.width = '100%'; msg.textContent = '¡Listo!';
+  await new Promise(r => setTimeout(r, 500));
+  overlay.classList.remove('active');
+
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('success-screen').style.display = 'block';
+  document.getElementById('hero-block').style.display = 'none';
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('progress-text').textContent = 'COMPLETADO';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
