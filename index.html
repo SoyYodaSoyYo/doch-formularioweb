@@ -714,12 +714,18 @@
 
 <script>
 /* ════ CONFIG — pegar tu URL de Apps Script aquí ════ */
-https://script.google.com/macros/s/AKfycbzNadeOR1MBVPXmCMztkShOV6A7rbAG7D5PgmiFDAzuQj2O4dw__bnynicfpR6aFjGr/exec
+const APPS_SCRIPT_URL = 'TU_URL_AQUI'; // Reemplazar con la URL del Apps Script desplegado
 
 /* ════ GATE — paso 1: código doch ════ */
 const ACCESS_CODE = 'doch';
-document.getElementById('gate-btn').addEventListener('click', checkGate);
-document.getElementById('gate-input').addEventListener('keydown', e => { if(e.key==='Enter') checkGate(); });
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('gate-btn').addEventListener('click', checkGate);
+  document.getElementById('gate-input').addEventListener('keydown', e => { if(e.key==='Enter') checkGate(); });
+  document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') confirmPin(false); });
+  document.getElementById('pin-new-btn').addEventListener('click', () => confirmPin(false));
+  document.getElementById('pin-recover-btn').addEventListener('click', () => confirmPin(true));
+});
 
 function checkGate() {
   const val = document.getElementById('gate-input').value.trim().toLowerCase();
@@ -737,11 +743,6 @@ function checkGate() {
   }
 }
 
-document.getElementById('pin-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') confirmPin(false);
-});
-
-/* ════ GATE — paso 2: PIN personal 4 dígitos ════ */
 let SESSION_ID = '';
 
 function confirmPin(isRecovery) {
