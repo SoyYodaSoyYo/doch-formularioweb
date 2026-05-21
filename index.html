@@ -199,32 +199,47 @@
     <button id="gate-btn">ACCEDER →</button>
   </div>
 
-  <!-- PASO 2: código personal 4 dígitos -->
+  <!-- PASO 2: código generado automáticamente -->
   <div id="gate-step2" style="display:none; flex-direction:column; align-items:center; gap:0;">
-    <div class="gate-label" style="margin-bottom:6px">Elige tu código personal de 4 números</div>
-    <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px;text-align:center;">
-      Lo usarás para retomar el formulario<br>desde cualquier dispositivo
-    </div>
-    <input id="pin-input" type="number" maxlength="4" min="1000" max="9999"
-      placeholder="0000"
-      style="background:#1a1a1a;border:1px solid #333;color:var(--white);font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:10px;text-align:center;padding:16px 24px;width:200px;outline:none;-moz-appearance:textfield;"
-      oninput="if(this.value.length>4) this.value=this.value.slice(0,4); document.getElementById('pin-error').textContent='';"
-    />
-    <div id="pin-error" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--red);margin-top:10px;height:16px;text-align:center;text-transform:uppercase;"></div>
 
-    <!-- Si ya tiene código: recuperar -->
-    <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:1px;text-transform:uppercase;margin-top:20px;margin-bottom:8px;">¿Ya tienes un código? Escríbelo para continuar</div>
-
-    <div style="display:flex;gap:10px;margin-top:4px;">
-      <button id="pin-new-btn" onclick="confirmPin(false)"
-        style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:var(--white);color:var(--black);border:none;padding:12px 24px;cursor:pointer;">
-        EMPEZAR →
-      </button>
-      <button id="pin-recover-btn" onclick="confirmPin(true)"
-        style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:none;border:1px solid #444;color:#aaa;padding:12px 24px;cursor:pointer;">
-        RECUPERAR
+    <!-- Panel nuevo usuario: muestra código generado -->
+    <div id="code-new-panel">
+      <div class="gate-label" style="margin-bottom:6px">Tu código personal</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:24px;text-align:center;">
+        Guárdalo — lo necesitarás para retomar<br>el formulario desde cualquier dispositivo
+      </div>
+      <div id="generated-code"
+        style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--white);background:#1a1a1a;border:1px solid #333;padding:20px 32px;text-align:center;min-width:300px;line-height:1.3;">
+        · · · ·
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#333;letter-spacing:1px;text-transform:uppercase;margin-top:10px;text-align:center;">
+        Anótalo antes de continuar
+      </div>
+      <button id="pin-new-btn"
+        style="margin-top:24px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;background:var(--white);color:var(--black);border:none;padding:14px 40px;cursor:pointer;">
+        YA LO ANOTÉ — EMPEZAR →
       </button>
     </div>
+
+    <!-- Separador -->
+    <div style="width:300px;height:1px;background:#222;margin:28px 0;"></div>
+
+    <!-- Panel recuperar: para quien ya tiene código -->
+    <div id="code-recover-panel" style="text-align:center;">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">
+        ¿Ya tienes un código? Escríbelo para continuar
+      </div>
+      <input id="recover-input" type="text" maxlength="30" placeholder="Ej: LUNA MESA RÍO SOL"
+        style="background:#1a1a1a;border:1px solid #2a2a2a;color:var(--white);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;text-align:center;padding:12px 20px;width:300px;outline:none;text-transform:uppercase;"
+        oninput="document.getElementById('pin-error').textContent=''"
+      />
+      <div id="pin-error" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--red);margin-top:8px;height:16px;text-align:center;text-transform:uppercase;"></div>
+      <button id="pin-recover-btn"
+        style="margin-top:12px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:none;border:1px solid #333;color:#666;padding:10px 24px;cursor:pointer;">
+        RECUPERAR BORRADOR
+      </button>
+    </div>
+
   </div>
 
   <div class="gate-footer">doch.fun · Formulario protegido</div>
@@ -719,21 +734,41 @@ const APPS_SCRIPT_URL = 'TU_URL_AQUI'; // Reemplazar con la URL del Apps Script 
 /* ════ GATE — paso 1: código doch ════ */
 const ACCESS_CODE = 'doch';
 
+// Lista de palabras simples en español para generar código memorable
+const PALABRAS = [
+  'LUNA','MESA','RÍO','SOL','MAR','PINO','LAGO','VELA','ROCA','NUBE',
+  'FLOR','TREN','LLAVE','MAPA','ISLA','BOSQUE','CAMPO','FUEGO','AGUA','VIENTO',
+  'PUERTA','CASA','LIBRO','PERRO','GATO','PÁJARO','ÁRBOL','PIEDRA','TIERRA','CIELO',
+  'BARCA','MONTE','VALLE','PLAYA','NIEVE','LLAMA','SENDA','FARO','PUENTE','TORRE'
+];
+
+function generarCodigo() {
+  const usadas = new Set();
+  const palabras = [];
+  while (palabras.length < 4) {
+    const p = PALABRAS[Math.floor(Math.random() * PALABRAS.length)];
+    if (!usadas.has(p)) { usadas.add(p); palabras.push(p); }
+  }
+  return palabras.join(' · ');
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  // Generar código al cargar
+  const codigo = generarCodigo();
+  document.getElementById('generated-code').textContent = codigo;
+
   document.getElementById('gate-btn').addEventListener('click', checkGate);
   document.getElementById('gate-input').addEventListener('keydown', e => { if(e.key==='Enter') checkGate(); });
-  document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') confirmPin(false); });
-  document.getElementById('pin-new-btn').addEventListener('click', () => confirmPin(false));
-  document.getElementById('pin-recover-btn').addEventListener('click', () => confirmPin(true));
+  document.getElementById('pin-new-btn').addEventListener('click', () => enterWithCode(false));
+  document.getElementById('pin-recover-btn').addEventListener('click', () => enterWithCode(true));
+  document.getElementById('recover-input').addEventListener('keydown', e => { if(e.key==='Enter') enterWithCode(true); });
 });
 
 function checkGate() {
   const val = document.getElementById('gate-input').value.trim().toLowerCase();
   if (val === ACCESS_CODE) {
-    // Pasar a paso 2
     document.getElementById('gate-step1').style.display = 'none';
     document.getElementById('gate-step2').style.display = 'flex';
-    document.getElementById('pin-input').focus();
   } else {
     const inp = document.getElementById('gate-input');
     inp.classList.add('error');
@@ -745,16 +780,21 @@ function checkGate() {
 
 let SESSION_ID = '';
 
-function confirmPin(isRecovery) {
-  const pin = document.getElementById('pin-input').value.trim();
-  if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-    document.getElementById('pin-error').textContent = 'Debe ser exactamente 4 números.';
-    return;
+function enterWithCode(isRecovery) {
+  if (isRecovery) {
+    // Usar código que el cliente escribe
+    const val = document.getElementById('recover-input').value.trim().toUpperCase().replace(/\s+/g,' ');
+    if (!val || val.length < 3) {
+      document.getElementById('pin-error').textContent = 'Escribe tu código para continuar.';
+      return;
+    }
+    SESSION_ID = 'DOCH·' + val;
+  } else {
+    // Usar código generado automáticamente
+    const codigo = document.getElementById('generated-code').textContent.trim();
+    SESSION_ID = 'DOCH·' + codigo;
   }
 
-  SESSION_ID = 'DOCH-' + pin;
-
-  // Guardar en localStorage también para comodidad en mismo navegador
   try { localStorage.setItem('doch_session_id', SESSION_ID); } catch(e) {}
 
   const gate = document.getElementById('gate');
@@ -764,10 +804,9 @@ function confirmPin(isRecovery) {
     document.getElementById('app').classList.add('visible');
     initAutosave();
     if (isRecovery) {
-      // Recuperar borrador desde Sheets usando el PIN
       recoverFromSheets();
     } else {
-      restoreDraft(); // intenta localStorage como fallback
+      restoreDraft();
     }
   }, 480);
 }
@@ -789,14 +828,15 @@ async function saveDraftToSheets(reachedSection) {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'TU_URL_AQUI') return;
   try {
     const data = collectFormData();
-    data.estado          = 'BORRADOR';
-    data.sesion_id       = SESSION_ID;
+    data.estado            = 'BORRADOR';
+    data.sesion_id         = SESSION_ID;
     data.seccion_alcanzada = reachedSection;
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      body: new URLSearchParams({ data: JSON.stringify(data), mode: 'draft' })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(JSON.stringify(data)) + '&mode=draft'
     });
-  } catch(e) { /* silencioso — no interrumpir al usuario */ }
+  } catch(e) { /* silencioso */ }
 }
 function updateProgress() {
   const pct = ((current-1)/(TOTAL-1))*100;
@@ -1126,12 +1166,12 @@ async function submitForm() {
 
   try {
     if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'TU_URL_AQUI') {
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(collectFormData()));
-      uploadedFiles['preview-logo'].forEach((f,i) => formData.append(`logo_${i}`, f));
-      uploadedFiles['preview-fotos'].forEach((f,i) => formData.append(`foto_${i}`, f));
-      uploadedFiles['preview-refs'].forEach((f,i) => formData.append(`ref_${i}`, f));
-      await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const data = collectFormData();
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(JSON.stringify(data)) + '&mode=final'
+      });
     }
   } catch(e) { console.warn('Submit error:', e); }
 
