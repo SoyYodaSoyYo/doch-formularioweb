@@ -190,11 +190,50 @@
 <div id="gate">
   <div class="gate-logo">DOCH</div>
   <div class="gate-sub">Operaciones Inteligentes — Chile</div>
-  <div class="gate-label">Ingresa tu código de acceso</div>
-  <input id="gate-input" type="password" maxlength="20" placeholder="· · · ·" />
-  <div id="gate-error"></div>
-  <button id="gate-btn">ACCEDER →</button>
+
+  <!-- PASO 1: código doch -->
+  <div id="gate-step1">
+    <div class="gate-label" style="margin-bottom:12px">Ingresa el código de acceso</div>
+    <input id="gate-input" type="password" maxlength="20" placeholder="· · · ·" />
+    <div id="gate-error"></div>
+    <button id="gate-btn">ACCEDER →</button>
+  </div>
+
+  <!-- PASO 2: código personal 4 dígitos -->
+  <div id="gate-step2" style="display:none; flex-direction:column; align-items:center; gap:0;">
+    <div class="gate-label" style="margin-bottom:6px">Elige tu código personal de 4 números</div>
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px;text-align:center;">
+      Lo usarás para retomar el formulario<br>desde cualquier dispositivo
+    </div>
+    <input id="pin-input" type="number" maxlength="4" min="1000" max="9999"
+      placeholder="0000"
+      style="background:#1a1a1a;border:1px solid #333;color:var(--white);font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:10px;text-align:center;padding:16px 24px;width:200px;outline:none;-moz-appearance:textfield;"
+      oninput="if(this.value.length>4) this.value=this.value.slice(0,4); document.getElementById('pin-error').textContent='';"
+    />
+    <div id="pin-error" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--red);margin-top:10px;height:16px;text-align:center;text-transform:uppercase;"></div>
+
+    <!-- Si ya tiene código: recuperar -->
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;letter-spacing:1px;text-transform:uppercase;margin-top:20px;margin-bottom:8px;">¿Ya tienes un código? Escríbelo para continuar</div>
+
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button id="pin-new-btn" onclick="confirmPin(false)"
+        style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:var(--white);color:var(--black);border:none;padding:12px 24px;cursor:pointer;">
+        EMPEZAR →
+      </button>
+      <button id="pin-recover-btn" onclick="confirmPin(true)"
+        style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:none;border:1px solid #444;color:#aaa;padding:12px 24px;cursor:pointer;">
+        RECUPERAR
+      </button>
+    </div>
+  </div>
+
   <div class="gate-footer">doch.fun · Formulario protegido</div>
+</div>
+
+<!-- DRAFT BANNER -->
+<div id="draft-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--black);color:var(--white);padding:14px 48px;z-index:200;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #333;">
+  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;">↩ Borrador recuperado — puedes continuar donde lo dejaste</span>
+  <button onclick="document.getElementById('draft-banner').style.display='none'" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;background:none;border:1px solid #444;color:#aaa;padding:6px 16px;cursor:pointer;">OK</button>
 </div>
 
 <!-- SENDING OVERLAY -->
@@ -675,9 +714,9 @@
 
 <script>
 /* ════ CONFIG — pegar tu URL de Apps Script aquí ════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQivFZEi8KboOWbxZyUGxKWy7d05Nonwm4d1GVqPoDiTsHfuLoiaz0yc1KTi2C-Y9o/exec';
+const APPS_SCRIPT_URL = 'TU_URL_AQUI'; // Reemplazar con la URL del Apps Script desplegado
 
-/* ════ GATE ════ */
+/* ════ GATE — paso 1: código doch ════ */
 const ACCESS_CODE = 'doch';
 document.getElementById('gate-btn').addEventListener('click', checkGate);
 document.getElementById('gate-input').addEventListener('keydown', e => { if(e.key==='Enter') checkGate(); });
@@ -685,9 +724,10 @@ document.getElementById('gate-input').addEventListener('keydown', e => { if(e.ke
 function checkGate() {
   const val = document.getElementById('gate-input').value.trim().toLowerCase();
   if (val === ACCESS_CODE) {
-    const gate = document.getElementById('gate');
-    gate.classList.add('exit');
-    setTimeout(() => { gate.style.display='none'; document.getElementById('app').classList.add('visible'); }, 480);
+    // Pasar a paso 2
+    document.getElementById('gate-step1').style.display = 'none';
+    document.getElementById('gate-step2').style.display = 'flex';
+    document.getElementById('pin-input').focus();
   } else {
     const inp = document.getElementById('gate-input');
     inp.classList.add('error');
@@ -697,14 +737,65 @@ function checkGate() {
   }
 }
 
+document.getElementById('pin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmPin(false);
+});
+
+/* ════ GATE — paso 2: PIN personal 4 dígitos ════ */
+let SESSION_ID = '';
+
+function confirmPin(isRecovery) {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    document.getElementById('pin-error').textContent = 'Debe ser exactamente 4 números.';
+    return;
+  }
+
+  SESSION_ID = 'DOCH-' + pin;
+
+  // Guardar en localStorage también para comodidad en mismo navegador
+  try { localStorage.setItem('doch_session_id', SESSION_ID); } catch(e) {}
+
+  const gate = document.getElementById('gate');
+  gate.classList.add('exit');
+  setTimeout(() => {
+    gate.style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    initAutosave();
+    if (isRecovery) {
+      // Recuperar borrador desde Sheets usando el PIN
+      recoverFromSheets();
+    } else {
+      restoreDraft(); // intenta localStorage como fallback
+    }
+  }, 480);
+}
+
 /* ════ NAVIGATION ════ */
 const TOTAL = 10; let current = 1;
 function goTo(n) {
   document.querySelector(`[data-section="${current}"]`).classList.remove('active');
   document.querySelector(`[data-section="${n}"]`).classList.add('active');
+  // Guardar borrador en Sheets al avanzar (solo hacia adelante)
+  if (n > current) saveDraftToSheets(n);
   current = n; updateProgress();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   document.getElementById('hero-block').style.display = n===1 ? '' : 'none';
+}
+
+/* Envío silencioso de borrador al Sheet ── */
+async function saveDraftToSheets(reachedSection) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'TU_URL_AQUI') return;
+  try {
+    const data = collectFormData();
+    data.estado          = 'BORRADOR';
+    data.sesion_id       = SESSION_ID;
+    data.seccion_alcanzada = reachedSection;
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ data: JSON.stringify(data), mode: 'draft' })
+    });
+  } catch(e) { /* silencioso — no interrumpir al usuario */ }
 }
 function updateProgress() {
   const pct = ((current-1)/(TOTAL-1))*100;
@@ -830,9 +921,184 @@ function collectFormData() {
     notas_extra: getVal('q-extra'),
     archivos_logo: uploadedFiles['preview-logo'].length,
     archivos_fotos: uploadedFiles['preview-fotos'].length,
-    archivos_referencias: uploadedFiles['preview-refs'].length
+    archivos_referencias: uploadedFiles['preview-refs'].length,
+    estado: 'COMPLETO',
+    sesion_id: SESSION_ID,
+    seccion_alcanzada: 10
   };
 }
+
+/* ════ RECUPERAR BORRADOR DESDE SHEETS ════ */
+async function recoverFromSheets() {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'TU_URL_AQUI') {
+    restoreDraft(); return;
+  }
+  // Mostrar banner de carga
+  const banner = document.getElementById('draft-banner');
+  const bannerText = banner.querySelector('span');
+  bannerText.textContent = '↩ Buscando tu borrador…';
+  banner.style.display = 'flex';
+
+  try {
+    const url = APPS_SCRIPT_URL + '?mode=recover&session_id=' + encodeURIComponent(SESSION_ID);
+    const res  = await fetch(url);
+    const json = await res.json();
+
+    if (json.status === 'found' && json.data) {
+      applyRecoveredData(json.data);
+      bannerText.textContent = '↩ Borrador recuperado — continúa donde lo dejaste';
+    } else {
+      bannerText.textContent = '✓ Código registrado — puedes comenzar';
+      setTimeout(() => { banner.style.display = 'none'; }, 3000);
+    }
+  } catch(e) {
+    restoreDraft(); // fallback a localStorage
+    bannerText.textContent = '↩ Borrador local recuperado';
+  }
+}
+
+function applyRecoveredData(data) {
+  // Rellenar campos de texto
+  TEXT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    const key = id.replace('q-','').replace(/-/g,'_');
+    if (el && data[key] !== undefined) el.value = data[key];
+  });
+  // Rellenar radios
+  RADIO_NAMES.forEach(name => {
+    const key = name;
+    if (data[key]) {
+      const el = document.querySelector(`[name="${name}"][value="${data[key]}"]`);
+      if (el) { el.checked = true; el.dispatchEvent(new Event('change')); }
+    }
+  });
+  // Rellenar checkboxes
+  CHECK_NAMES.forEach(name => {
+    if (data[name]) {
+      String(data[name]).split(', ').forEach(val => {
+        const el = document.querySelector(`[name="${name}"][value="${val.trim()}"]`);
+        if (el) { el.checked = true; el.dispatchEvent(new Event('change')); }
+      });
+    }
+  });
+  // Ir a sección donde quedó
+  const sec = parseInt(data.seccion_alcanzada) || 1;
+  if (sec > 1) goTo(sec);
+}
+
+/* ════ AUTOSAVE — localStorage ════ */
+const STORAGE_KEY = 'doch_form_draft';
+
+// IDs de todos los campos de texto y textarea
+const TEXT_IDS = [
+  'q-nombre','q-cliente','q-problema','q-cambio',
+  'q-servicio-estrella','q-ingresos','q-facil',
+  'q-cta','q-historia','q-diferenciacion',
+  'q-colores','q-no-quiero','q-referencias',
+  'q-dominio-actual','q-palabras-dominio','q-hosting',
+  'q-instagram','q-facebook','q-tiktok','q-youtube',
+  'q-testimonios','q-certificaciones','q-equipo',
+  'q-futuro','q-extra',
+  'other-objetivo','other-fuente','other-estado',
+  'other-feeling','other-futuro'
+];
+
+// Nombres de todos los grupos radio/checkbox
+const RADIO_NAMES  = ['negocio_activo','fuente_ingreso','contacto','agenda','pagos',
+                      'videos','redes_integrar','testimonios','equipo','tiene_dominio',
+                      'hosting','correo','admin'];
+const CHECK_NAMES  = ['objetivo','estado_prev','feeling','futuro_func','ext_dominio'];
+
+function saveDraft() {
+  const draft = { texts: {}, radios: {}, checks: {}, section: current };
+
+  TEXT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) draft.texts[id] = el.value;
+  });
+
+  RADIO_NAMES.forEach(name => {
+    const el = document.querySelector(`[name="${name}"]:checked`);
+    if (el) draft.radios[name] = el.value;
+  });
+
+  CHECK_NAMES.forEach(name => {
+    draft.checks[name] = Array.from(
+      document.querySelectorAll(`[name="${name}"]:checked`)
+    ).map(e => e.value);
+  });
+
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)); } catch(e) {}
+}
+
+function restoreDraft() {
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
+  if (!draft) return;
+
+  // Restaurar textos
+  Object.entries(draft.texts || {}).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; if (val) el.classList.add('visible'); }
+  });
+
+  // Restaurar radios
+  Object.entries(draft.radios || {}).forEach(([name, val]) => {
+    const el = document.querySelector(`[name="${name}"][value="${CSS.escape(val)}"]`);
+    if (el) {
+      el.checked = true;
+      // Disparar onchange si existe (para mostrar bloques condicionales)
+      el.dispatchEvent(new Event('change'));
+    }
+  });
+
+  // Restaurar checkboxes
+  Object.entries(draft.checks || {}).forEach(([name, vals]) => {
+    vals.forEach(val => {
+      const el = document.querySelector(`[name="${name}"][value="${CSS.escape(val)}"]`);
+      if (el) { el.checked = true; el.dispatchEvent(new Event('change')); }
+    });
+  });
+
+  // Mostrar campos "otro" si tienen contenido
+  ['other-objetivo','other-fuente','other-estado','other-feeling','other-futuro'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value) el.classList.add('visible');
+  });
+
+  // Ir a la sección donde quedó
+  if (draft.section && draft.section > 1) goTo(draft.section);
+
+  showDraftBanner();
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
+function showDraftBanner() {
+  const banner = document.getElementById('draft-banner');
+  if (banner) banner.style.display = 'flex';
+}
+
+// Escuchar cambios en todos los campos para autoguardar
+function initAutosave() {
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('change', saveDraft);
+    el.addEventListener('input', saveDraft);
+  });
+  // Observer para filas dinámicas (servicios, dominios)
+  const obs = new MutationObserver(() => {
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+      el.addEventListener('change', saveDraft);
+      el.addEventListener('input', saveDraft);
+    });
+  });
+  obs.observe(document.getElementById('service-rows'), { childList: true });
+}
+
+// Iniciar autosave y restaurar borrador al cargar el app
+document.getElementById('app').addEventListener('transitionend', () => {}, { once: true });
 
 /* ════ SUBMIT ════ */
 async function submitForm() {
@@ -872,6 +1138,7 @@ async function submitForm() {
   await new Promise(r => setTimeout(r, 500));
   overlay.classList.remove('active');
 
+  clearDraft();
   document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
   document.getElementById('success-screen').style.display = 'block';
   document.getElementById('hero-block').style.display = 'none';
