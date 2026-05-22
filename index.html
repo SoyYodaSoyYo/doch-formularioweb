@@ -557,8 +557,11 @@
     <div id="success-screen">
       <div class="success-icon">✓</div>
       <h2>¡CARGA EXITOSA!</h2>
-      <p>Tus respuestas fueron recibidas correctamente.<br><br>Pronto nos contactaremos contigo.<br><br>Gracias por confiar en DOCH.</p>
-      <a href="https://doch.fun" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;border-bottom:1px solid var(--black);padding-bottom:3px;">VOLVER A DOCH.FUN</a>
+      <div style="margin: 24px auto 8px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gray);">Tu código de registro</div>
+      <div id="success-code" style="font-family:'Bebas Neue',sans-serif; font-size:80px; letter-spacing:12px; color:var(--black); line-height:1; margin-bottom:8px;">—</div>
+      <div style="font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray); margin-bottom:32px;">Guarda este código — te permite retomar o actualizar tu registro</div>
+      <p>Tus respuestas fueron recibidas correctamente.<br>Pronto nos contactaremos contigo.<br><br>Gracias por confiar en DOCH.</p>
+      <a href="https://doch.fun" style="display:inline-block;margin-top:32px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;border-bottom:1px solid var(--black);padding-bottom:3px;">VOLVER A DOCH.FUN</a>
     </div>
 
   </main>
@@ -574,7 +577,7 @@
 /* ══════════════════════════════════════════
    CONFIG — reemplaza con tu URL de Apps Script
 ══════════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNadeOR1MBVPXmCMztkShOV6A7rbAG7D5PgmiFDAzuQj2O4dw__bnynicfpR6aFjGr/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLBvMZJc_QcJmpR5RXPGOlhgvxoACISXYVMgNS9OIlm3Hzw9SmbwmbhQBH1UIqAwWw/exec';
 
 /* ══════ GATE ══════ */
 const ACCESS_CODE = 'doch';
@@ -763,14 +766,45 @@ function collectData() {
 async function saveToSheets(estado, seccion) {
   try {
     const data = collectData();
-    data.estado   = estado;
-    data.seccion  = seccion;
+    data.estado  = estado;
+    data.seccion = seccion;
+    data.codigo  = SESSION_ID; // asegurar que siempre viaje
+
+    // Convertir archivos a base64
+    const logoB64  = await filesToBase64(uploadedFiles['preview-logo']);
+    const fotosB64 = await filesToBase64(uploadedFiles['preview-fotos']);
+    const refsB64  = await filesToBase64(uploadedFiles['preview-refs']);
+
+    const payload = {
+      data:   JSON.stringify(data),
+      mode:   estado === 'COMPLETO' ? 'final' : 'draft',
+      logos:  JSON.stringify(logoB64),
+      fotos:  JSON.stringify(fotosB64),
+      refs:   JSON.stringify(refsB64)
+    };
+
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'data=' + encodeURIComponent(JSON.stringify(data)) + '&mode=' + (estado === 'COMPLETO' ? 'final' : 'draft')
+      body: Object.entries(payload).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&')
     });
-  } catch(e) { /* silencioso */ }
+  } catch(e) { console.warn('saveToSheets error:', e); }
+}
+
+async function filesToBase64(fileList) {
+  const results = [];
+  for (const file of fileList) {
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result); // incluye "data:mime;base64,..."
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      results.push({ name: file.name, data: b64 });
+    } catch(e) { /* skip failed file */ }
+  }
+  return results;
 }
 
 /* ══════ RECOVER ══════ */
@@ -830,6 +864,7 @@ async function submitForm() {
   await new Promise(r => setTimeout(r, 500));
   overlay.classList.remove('active');
   document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('success-code').textContent = SESSION_ID;
   document.getElementById('success-screen').style.display = 'block';
   document.getElementById('hero-block').style.display = 'none';
   document.getElementById('progress-bar').style.width = '100%';
